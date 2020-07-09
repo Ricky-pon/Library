@@ -13,14 +13,14 @@ typedef pair<lint, lint> pll;
 template<class T> bool chmax(T &a, const T &b){if(a<b){a=b; return true;} return false;}
 template<class T> bool chmin(T &a, const T &b){if(a>b){a=b; return true;} return false;}
 template<class T> T div_floor(T a, T b){
-    if(b < 0) a *= -1, b *= -1;
+    if(b<0) a*=-1, b*=-1;
     return a>=0 ? a/b : (a+1)/b-1;
 }
 template<class T> T div_ceil(T a, T b){
-    if(b < 0) a *= -1, b *= -1;
+    if(b<0) a*=-1, b*=-1;
     return a>0 ? (a-1)/b+1 : a/b;
 }
 
-constexpr lint mod = 1e9+7;
+constexpr lint mod = 1000000007;
 constexpr lint INF = mod * mod;
 constexpr int MAX = 200010;
