@@ -178,7 +178,22 @@ namespace geo{
         return true;
     }
 
-    Polygon convex_hull(Polygon p){
+    int point_in_polygon(Point a, Polygon &p){
+        int n = p.size(), wn = 0;
+        rep(i, n){
+            int j = (i+1) % n;
+            if(distance_sp(p[i], p[j], a) == 0) return 1;
+            else if(p[i].y <= a.y && a.y < p[j].y){
+                wn += (ccw(a, p[i], p[j]) == CCW_COUNTER_CLOCKWISE);
+            }
+            else if(p[j].y <= a.y && a.y < p[i].y){
+                wn -= (ccw(a, p[i], p[j]) == CCW_CLOCKWISE);
+            }
+        }
+        return wn == 0 ? 0 : 2;
+    }
+
+    Polygon convex_hull(Points p){
         int n = p.size();
         sort(p.begin(), p.end());
         Polygon ch(2*n);
