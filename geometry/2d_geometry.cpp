@@ -210,6 +210,28 @@ namespace geo{
         return ch;
     }
 
+    pair<real_num, pii> farthest_pair(Polygon &p){
+        int n = p.size();
+        if(n == 2){
+            return {abs(p[0]-p[1]), {0, 1}};
+        }
+        int i = 0, j = 0;
+        rep(k, n){
+            if(le(p[k].x, p[i].x)) i = k;
+            if(ge(p[k].x, p[j].x)) j = k;
+        }
+        real_num d = 0;
+        int a = i, b = j, si = i, sj = j;
+        while(i != sj || j != si){
+            if(chmax(d, abs(p[i]-p[j]))) a = i, b = j;
+            if(le((p[(i+1)%n]-p[i]) ^ (p[(j+1)%n]-p[j]), 0)){
+                i = (i+1) % n;
+            }
+            else j = (j+1) % n;
+        }
+        return {d, {a, b}};
+    }
+
     int has_intersection_cc(Point c1, real_num r1, Point c2, real_num r2){
         if(r1 < r2){
             swap(c1, c2);
