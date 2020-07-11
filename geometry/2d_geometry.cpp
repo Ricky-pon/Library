@@ -96,14 +96,14 @@ namespace geo{
         return proj(a, v, p)*2-p;
     }
 
-    constexpr int CCW_COUNTER_CLOCKWISE=1;
-    constexpr int CCW_CLOCKWISE=-1;
-    constexpr int CCW_ONLINE_BACK=-2; // C->A->B
-    constexpr int CCW_ONLINE_FRONT=2; // A->B->C
-    constexpr int CCW_ON_SEGMENT=0; // A->C->B
+    constexpr int CCW_COUNTER_CLOCKWISE = 1;
+    constexpr int CCW_CLOCKWISE = -1;
+    constexpr int CCW_ONLINE_BACK = -2; // C->A->B
+    constexpr int CCW_ONLINE_FRONT = 2; // A->B->C
+    constexpr int CCW_ON_SEGMENT = 0; // A->C->B
  
     inline int ccw(Point a, Point b, Point c){
-        Vec v=b-a, w=c-a;
+        Vec v = b-a, w = c-a;
         if(ge(v^w, 0)) return CCW_COUNTER_CLOCKWISE;
         if(le(v^w, 0)) return CCW_CLOCKWISE;
         if(le(v*w, 0)) return CCW_ONLINE_BACK;
@@ -117,6 +117,10 @@ namespace geo{
 
     bool is_orthogonal(Vec v, Vec w){
         return eq(v*w, 0);
+    }
+
+    bool has_intersection_ls(Point p, Vec v, Point a, Point b){
+        return sgn(v^(a-p)) * sgn(v^(b-p)) <= 0;
     }
 
     bool has_intersection_ss(Point a, Point b, Point c, Point d){
@@ -143,10 +147,9 @@ namespace geo{
         return 0;
     }
 
-    real_num distance_ls(Point a, Vec v, Point c, Point d){
-        Point b = a + v;
-        if(ccw(a, b, c)*ccw(a, b, d) <= 0) return 0;
-        return min(distance_lp(a, v, c), distance_lp(a, v, d));
+    real_num distance_ls(Point p, Vec v, Point a, Point b){
+        if(has_intersection_ls(p, v, a, b)) return 0;
+        return min(distance_lp(p, v, a), distance_lp(p, v, b));
     }
 
     real_num distance_ss(Point a, Point b, Point c, Point d){
@@ -230,6 +233,49 @@ namespace geo{
             else j = (j+1) % n;
         }
         return {d, {a, b}};
+    }
+
+    real_num convex_cut(Polygon &p, Point a, Vec v){
+        int n = p.size();
+        Polygon q;
+        rep(i, n){
+            int j = (i+1) % n;
+            if(geq(v^(p[i]-a), 0)) q.push_back(p[i]);
+            if(has_intersection_ls(a, v, p[i], p[j]) && !is_parallel(v, p[j]-p[i])){
+                q.push_back(intersection_ll(a, v, p[i], p[j]-p[i]));
+            }
+        }
+        return area(q);
+    }
+
+    pair<real_num, pii> closest_pair_rec(vector<pair<Point, int>> &p, int l, int r){
+        if(r-l <= 1) return {INF, {p.size(), p.size()}};
+
+        int m = (l+r) / 2;
+        real_num x = p[m].fi.x;
+        auto d = min(closest_pair_rec(p, l, m), closest_pair_rec(p, m, r));
+        auto cmp = [](pair<Point, int> a, pair<Point, int> b){return a.fi.y < b.fi.y;};
+        inplace_merge(p.begin()+l, p.begin()+m, p.begin()+r, cmp);
+
+        vector<pair<Point, int>> q;
+        For(i, l, r){
+            if(ge(abs(p[i].fi.x-x), d.fi)) continue;
+            rrep(j, q.size()){
+                real_num dx = p[i].fi.x - q[j].fi.x;
+                real_num dy = p[i].fi.y - q[j].fi.y;
+                if(geq(dy, d.fi)) break;
+                chmin(d, {abs(p[i].fi-q[j].fi), {p[i].se, q[j].se}});
+            }
+            q.push_back(p[i]);
+        }
+        return d;
+    }
+
+    pair<real_num, pii> closest_pair(Points &p){
+        vector<pair<Point, int>> pid(p.size());
+        rep(i, p.size()) pid[i] = {p[i], i};
+        sort(pid.begin(), pid.end());
+        return closest_pair_rec(pid, 0, p.size());
     }
 
     int has_intersection_cc(Point c1, real_num r1, Point c2, real_num r2){
