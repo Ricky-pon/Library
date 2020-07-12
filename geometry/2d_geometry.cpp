@@ -82,6 +82,10 @@ namespace geo{
     real_num arg(Point p){
         return atan2(p.y, p.x);
     }
+
+    real_num angle(Point a, Point b){
+        return arg({a*b, a^b});
+    }
  
     Point rot(Point p, real_num t){
         return {p.x*cos(t)-p.y*sin(t), p.x*sin(t)+p.y*cos(t)};
@@ -261,7 +265,6 @@ namespace geo{
         For(i, l, r){
             if(ge(abs(p[i].fi.x-x), d.fi)) continue;
             rrep(j, q.size()){
-                real_num dx = p[i].fi.x - q[j].fi.x;
                 real_num dy = p[i].fi.y - q[j].fi.y;
                 if(geq(dy, d.fi)) break;
                 chmin(d, {abs(p[i].fi-q[j].fi), {p[i].se, q[j].se}});
@@ -309,6 +312,15 @@ namespace geo{
         return ps;
     }
 
+    Points intersection_cs(Point c, real_num r, Point a, Point b){
+        Points ps = intersection_cl(c, r, b, a-b);
+        Points qs;
+        for(auto p: ps){
+            if(ccw(a, b, p) == CCW_ON_SEGMENT) qs.push_back(p);
+        }
+        return qs;
+    }
+
     Points intersection_cc(Point c1, real_num r1, Point c2, real_num r2){
         Points ps;
         Vec v = c2-c1, w = {v.y*-1, v.x};
@@ -319,6 +331,27 @@ namespace geo{
         if(has_intersection_cc(c1, r1, c2, r2)!=2) return ps;
         ps.push_back(c1 + v*x/d - w*y/d);
         return ps;
+    }
+
+    real_num common_area_ct(Point c, real_num r, Point a, Point b){
+        Vec va = a-c, vb = b-c;
+        if(eq(va^vb, 0)) return 0;
+        else if(leq(abs(va), r) && leq(abs(vb), r)) return (va^vb)/2;
+        else if(geq(distance_sp(a, b, c), r)) return r*r*angle(va, vb)/2;
+        else{
+            auto ps = intersection_cs(c, r, a, b);
+            if(ps.size() == 1) return common_area_ct(c, r, a, ps[0]) + common_area_ct(c, r, ps[0], b);
+            else return common_area_ct(c, r, a, ps[0]) + common_area_ct(c, r, ps[0], ps[1]) + common_area_ct(c, r, ps[1], b);
+        }
+    }
+
+    real_num common_area_cp(Point c, real_num r, Polygon &p){
+        int n = p.size();
+        real_num ret = 0;
+        rep(i, n){
+            ret += common_area_ct(c, r, p[i], p[(i+1)%n]);
+        }
+        return ret;
     }
 
     real_num commn_area_cc(Point c1, real_num r1, Point c2, real_num r2){
